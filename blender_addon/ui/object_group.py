@@ -28,6 +28,39 @@ _velocity_items_ref: list = []
 _collision_window_items_ref: list = []
 
 
+def _sync_viewport_selection(self, context):
+    """Update callback for assigned_objects_index.
+
+    When the user clicks an entry in the assigned-objects UI list, make
+    that object the active (and only selected) object in the viewport so
+    the two directions of selection are kept in sync.
+    """
+    try:
+        idx = self.assigned_objects_index
+        if idx < 0 or idx >= len(self.assigned_objects):
+            return
+        from ..core.uuid_registry import get_object_by_uuid
+        uid = self.assigned_objects[idx].uuid
+        if not uid:
+            return
+        obj = get_object_by_uuid(uid)
+        if obj is None:
+            return
+        view_layer = getattr(context, "view_layer", None)
+        if view_layer is None:
+            return
+        # Avoid re-triggering the msgbus callback unnecessarily.
+        if view_layer.objects.active is obj:
+            return
+        # Deselect everything, then select and activate the target object.
+        for o in context.selected_objects:
+            o.select_set(False)
+        obj.select_set(True)
+        view_layer.objects.active = obj
+    except Exception:
+        pass
+
+
 def _invalidate_overlay_from_group(self=None, ctx=None):
     """Bump overlay version so velocity/group-scoped batches rebuild.
 
@@ -143,7 +176,7 @@ class ObjectGroup(PropertyGroup):
         description="Select a pin configuration profile",
     )  # pyright: ignore
     assigned_objects: CollectionProperty(type=AssignedObject)  # pyright: ignore
-    assigned_objects_index: IntProperty(default=-1)  # pyright: ignore  # Selected item in assigned objects list
+    assigned_objects_index: IntProperty(default=-1, update=lambda self, ctx: _sync_viewport_selection(self, ctx))  # pyright: ignore  # Selected item in assigned objects list
     index: IntProperty(default=-1)  # pyright: ignore  # Display index for UI
     uuid: StringProperty(default="")  # pyright: ignore  # Unique identifier
     pin_vertex_groups: CollectionProperty(type=PinVertexGroupItem)  # pyright: ignore

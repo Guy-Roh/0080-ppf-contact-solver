@@ -337,6 +337,42 @@ class OBJECT_OT_RemoveObjectFromGroup(Operator):
 
 
 _cleanup_scheduled = False
+_msgbus_owner = None
+
+
+def _on_active_object_changed():
+    """Sync assigned_objects_index when the viewport active object changes.
+
+    Called by bpy.msgbus whenever the active object on any LayerObjects
+    instance changes. Finds the first group whose assigned_objects list
+    contains the newly-active object and selects it there.
+    """
+    try:
+        context = bpy.context
+        if context is None:
+            return
+        scene = getattr(context, "scene", None)
+        if scene is None:
+            return
+        view_layer = getattr(context, "view_layer", None)
+        active_obj = getattr(view_layer.objects, "active", None) if view_layer else None
+        if active_obj is None:
+            return
+        from ...core.uuid_registry import get_object_uuid
+        from ...models.groups import has_addon_data
+        if not has_addon_data(scene):
+            return
+        active_uid = get_object_uuid(active_obj)
+        if not active_uid:
+            return
+        for group in iterate_active_object_groups(scene):
+            for i, assigned in enumerate(group.assigned_objects):
+                if assigned.uuid == active_uid:
+                    if group.assigned_objects_index != i:
+                        group.assigned_objects_index = i
+                    break
+    except Exception:
+        pass
 
 
 def _apply_cleanup():
@@ -448,6 +484,7 @@ def _reset_cleanup_flag_on_load(*_args):
 
 
 def register():
+    global _msgbus_owner
     for cls in classes:
         bpy.utils.register_class(cls)
     bpy.app.handlers.depsgraph_update_post.append(_cleanup_deleted_objects)
@@ -455,9 +492,19 @@ def register():
         if getattr(h, "__name__", "") == "_reset_cleanup_flag_on_load":
             bpy.app.handlers.load_post.remove(h)
     bpy.app.handlers.load_post.append(_reset_cleanup_flag_on_load)
+    # Subscribe to active-object changes so the group UI list tracks the selection.
+    _msgbus_owner = object()
+    bpy.msgbus.subscribe_rna(
+        key=bpy.types.LayerObjects,
+        owner=_msgbus_owner,
+        args=(),
+        notify=_on_active_object_changed,
+        options={"PERSISTENT"},
+    )
 
 
 def unregister():
+    global _msgbus_owner
     # Remove all instances (handles reload where function identity changes)
     handlers = bpy.app.handlers.depsgraph_update_post
     for h in list(handlers):
@@ -466,5 +513,8 @@ def unregister():
     for h in list(bpy.app.handlers.load_post):
         if getattr(h, "__name__", "") == "_reset_cleanup_flag_on_load":
             bpy.app.handlers.load_post.remove(h)
+    if _msgbus_owner is not None:
+        bpy.msgbus.clear_by_owner(_msgbus_owner)
+        _msgbus_owner = None
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
