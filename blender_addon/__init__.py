@@ -5,7 +5,7 @@
 
 from bpy.app.handlers import persistent  # pyright: ignore
 
-from .ui import main_panel, console, solver, state
+from .ui import main_panel, console, solver, state, panel_colors
 from .ui import dynamics  # Import the dynamics package
 from . import mesh_ops  # Import the mesh_ops package (snap + merge only)
 from .ops import zozo_contact_solver
@@ -158,6 +158,7 @@ def register():
 def _register_body():
     global reload_server
     state.register()
+    panel_colors.register()
     main_panel.register()
     solver.register()
     dynamics.register()
@@ -448,4 +449,5 @@ def unregister():
     dynamics.unregister()
     solver.unregister()
     main_panel.unregister()
+    panel_colors.unregister()
     state.unregister()

@@ -129,6 +129,12 @@ class MAIN_PT_RemotePanel(Panel):
     def poll(cls, context):
         return has_addon_data(context.scene)
 
+    def draw_header(self, context):
+        from .panel_colors import get_panel_icon_id
+        icon_id = get_panel_icon_id(self.bl_idname)
+        if icon_id:
+            self.layout.label(icon_value=icon_id)
+
     def draw(self, context):
         layout = self.layout
         root = get_addon_data(context.scene)

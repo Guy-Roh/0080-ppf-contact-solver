@@ -302,6 +302,12 @@ class MAIN_PT_SceneConfiguration(Panel):
     def poll(cls, context):
         return has_addon_data(context.scene)
 
+    def draw_header(self, context):
+        from ..panel_colors import get_panel_icon_id
+        icon_id = get_panel_icon_id(self.bl_idname)
+        if icon_id:
+            self.layout.label(icon_value=icon_id)
+
     def draw(self, context):
         layout = self.layout
 
@@ -550,6 +556,12 @@ class DYNAMICS_PT_Groups(Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = get_category_name()
+
+    def draw_header(self, context):
+        from ..panel_colors import get_panel_icon_id
+        icon_id = get_panel_icon_id(self.bl_idname)
+        if icon_id:
+            self.layout.label(icon_value=icon_id)
 
     def draw(self, context):
         layout = self.layout
@@ -1079,6 +1091,12 @@ class SNAPMERGE_PT_SnapAndMerge(Panel):
     def poll(cls, context):
         return has_addon_data(context.scene)
 
+    def draw_header(self, context):
+        from ..panel_colors import get_panel_icon_id
+        icon_id = get_panel_icon_id(self.bl_idname)
+        if icon_id:
+            self.layout.label(icon_value=icon_id)
+
     def draw(self, context):
         layout = self.layout
 
@@ -1155,6 +1173,12 @@ class VISUALIZATION_PT_Visualization(Panel):
     @classmethod
     def poll(cls, context):
         return has_addon_data(context.scene)
+
+    def draw_header(self, context):
+        from ..panel_colors import get_panel_icon_id
+        icon_id = get_panel_icon_id(self.bl_idname)
+        if icon_id:
+            self.layout.label(icon_value=icon_id)
 
     def draw(self, context):
         layout = self.layout
